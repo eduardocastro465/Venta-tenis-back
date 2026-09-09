@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:4000
+@token = TU_TOKEN_AQUI
+
+POST {{baseUrl}}/api/lot/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "mercancia": 5000,
+    "viaticos": 1000,
+    "gasolina": 1000,
+    "otros": 1000
+}

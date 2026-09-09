@@ -4,19 +4,21 @@ import { allowedOrigins } from './config.js';
 import { generalLimiter } from './middleware/rateLimit.js';
 import { langMiddleware, type LangRequest } from './middleware/lang.middleware.js';
 import { sanitizeBody } from './middleware/sanitize.middleware.js';
-import authRoutes from "./routes/auth.routes.js";
 
 // Rutas
+import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/products.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import lotRoutes from "./routes/lot.routes.js";
+import filterRoutes from "./routes/filters.routes.js";
 
 const app = express();
 
 app.use(cors({ origin: allowedOrigins }));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // evita que alguien mande un JSON gigante y tumbe el servidor
 app.use(sanitizeBody); // limpia inyecciones de NoSQL
 app.use(generalLimiter); // limita el número de peticiones
-app.use(express.json({ limit: '10kb' })); // evita que alguien mande un JSON gigante y tumbe el servidor
 app.use(langMiddleware as express.RequestHandler); // detecta en que idioma responder
 
 
@@ -27,10 +29,12 @@ app.get('/', (req: Request, res: Response) => {
 
 
 // Rutas
+app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api/filters', filterRoutes);
 app.use('/api/products', productRoutes);
-
+app.use('/api/lot', lotRoutes);
 
 
 app.use((req: Request, res: Response) => {

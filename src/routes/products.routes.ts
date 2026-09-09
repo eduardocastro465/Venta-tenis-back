@@ -5,7 +5,7 @@ import { upload } from '../middleware/upload.middleware.js';
 
 const router = Router();
 
-router.post('/', upload.array('imagenes', 5), createProduct);
+router.post('/', upload.any(), createProduct);
 router.get('/', listProducts);
 router.get('/:id', getProduct);
 router.put('/:id', updateProduct);

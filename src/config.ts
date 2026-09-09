@@ -5,7 +5,7 @@ export const PORT = process.env.PORT || 4000;
 export const API_VERSION = process.env.API_VERSION || "v1";
 
 // sitios web permitidos
-const CORS_ORIGINS = process.env.CORS_ORIGINS || "http://localhost:4000";
+const CORS_ORIGINS = process.env.CORS_ORIGINS || "http://localhost:5173";
 export const allowedOrigins = CORS_ORIGINS.split(",").map((origin) => origin.trim());
 
 
