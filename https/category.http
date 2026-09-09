@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:4000
+@token = TU_TOKEN_AQUI
+
+### Crear producto
+POST {{baseUrl}}/api/category/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "nombre": "Juguetes"
+}
+
+
+### Obtener todas las categorias
+GET {{baseUrl}}/api/category/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### Actualizar categoria
+PUT {{baseUrl}}/api/category/6a9b3c2ce044046e3ee1f791
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "nombre": "Juguetes"
+}
+
+
+### Eliminar categoria
+DELETE {{baseUrl}}/api/category/6a9b3c2ce044046e3ee1f791
+Content-Type: application/json
+Authorization: Bearer {{token}}

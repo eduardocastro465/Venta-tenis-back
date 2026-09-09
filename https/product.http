@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:4000
+@token = TU_TOKEN_AQUI
+
+### Crear producto
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "nombre": "Ultraboost 22",
+    "marca": "Adidas",
+    "categorias": ["66f1a2b3c4d5e6f7a8b9c0d2"],
+    "genero": "hombre",
+    "descripcion": "Tenis para correr con suela Boost y parte superior tejida",
+    "precio": 3299,
+    "imagenes": [
+        "https://ejemplo.com/ultraboost-1.jpg",
+        "https://ejemplo.com/ultraboost-2.jpg"
+    ],
+    "variantes": [
+        { "talla": 25, "colorPrincipal": "negro"    , "coloresSecundarios": ["blanco"], "stock": 8 },
+        { "talla": 26, "colorPrincipal": "gris", "stock": 12 },
+        { "talla": 27, "colorPrincipal": "azul", "coloresSecundarios": ["negro", "blanco"], "stock": 3 }
+    ],
+    "activo": true
+}
+
+### Listar productos
+GET {{baseUrl}}/api/products
+
+### Obtener un producto por ID
+GET {{baseUrl}}/api/products/6a9b2553cfe88fdf2cd8d971
+
+### Actualizar producto
+PUT {{baseUrl}}/api/products/6a9b2553cfe88fdf2cd8d971
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "nombre": "Tenis Ultraboost 23",
+    "marca": "Adidas",
+    "categorias": ["6a9b3c37e044046e3ee1f792"],
+    "genero": "hombre",
+    "descripcion": "Tenis para correr con suela Boost y parte superior tejida",
+    "precio": 1299,
+    "imagenes": [
+        "https://ejemplo.com/ultraboost-1.jpg",
+        "https://ejemplo.com/ultraboost-2.jpg"
+    ],
+    "variantes": [
+        { "talla": 23, "colorPrincipal": "negro", "coloresSecundarios": ["blanco"], "stock": 8 },
+        { "talla": 24, "colorPrincipal": "gris", "stock": 12 },
+        { "talla": 25, "colorPrincipal": "azul", "coloresSecundarios": ["negro", "blanco"], "stock": 3 }
+    ],
+    "activo": true
+}
