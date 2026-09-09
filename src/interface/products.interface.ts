@@ -1,29 +1,28 @@
-import mongoose from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export interface ICategory extends Document {
     nombre: string;
 }
 
 export interface IVariante {
-    tallas: number;
     colorPrincipal: string;
     coloresSecundarios?: string[];
+    imagenes: string[];
     stock: number;
 }
 
 export interface IProduct extends Document {
     nombre: string;
     marca?: string;
-    lote: mongoose.Types.ObjectId;
-    categorias: mongoose.Types.ObjectId;
+    lote: Types.ObjectId;
+    categorias: Types.ObjectId[];
     genero: string;
     descripcion: string;
-    talla: string;
+    talla?: string;
+    stock: number;
     precioMercado: number;
     costo: number;
     imagenes: string[];
-    variantes: IVariante[];
+    variantes?: IVariante[];
     activo?: boolean;
-    stockTotal: number;
-    vistas: number;
 }

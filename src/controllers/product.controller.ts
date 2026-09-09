@@ -3,62 +3,89 @@ import { ProductModel } from '../models/product.model.js';
 import type { LangRequest } from '../middleware/lang.middleware.js';
 import { handleError } from '../utils/handleError.js';
 import { uploadMultipleImages } from '../utils/uploadMultipleImages.js';
+import { groupFilesByVariant, uploadVariantesImages } from '../utils/variantImages.util.js';
+import { checkVariantesDuplicadas } from '../utils/validateVariantes.util.js';
+
+
+const VARIANTE_IMAGENES_REGEX = /^variante_(\d+)_imagenes$/;
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const createProduct = async (req: LangRequest, res: Response) => {
     try {
-        const { nombre, lote, marca, categorias, genero, descripcion, precio, variantes, activo } = req.body;
+        const { nombre, lote, stock, marca, precioMercado, costo, categorias, genero, descripcion, variantes, activo } = req.body;
 
         // Buscamos si existe el mismo producto ya resgitrado en el mismo lote
         const existingProduct = await ProductModel.findOne({
-            nombre: { $regex: `^${nombre.trim()}$`, $options: 'i' },
-            marca: { $regex: `^${marca.trim()}$`, $options: 'i' },
-            lote: { $regex: `${lote.trim()}`, $options: 'i' }
+            nombre: { $regex: `^${escapeRegex(nombre.trim())}$`, $options: 'i' },
+            ...(marca ? { marca: { $regex: `^${escapeRegex(marca.trim())}$`, $options: 'i' } } : {}),
+            lote,
         });
 
         if (existingProduct) {
             return res.status(409).json({ message: 'Ya existe un producto con ese nombre y marca, en el mismo lote' });
         }
 
-        // Evitamos variantes duplicadas dentro de un mismo producto
-        if (variantes?.length) {
-            const claves = variantes.map((v: any) => JSON.stringify({ color: v.color, talla: v.talla }));
-            const claveSet = new Set(claves);
-            if (claveSet.size !== claves.length) {
-                return res.status(400).json({ message: 'Hay variantes duplicadas (misma combinación de color/talla)' });
+        let variantesParsed: any[] = [];
+        if (variantes) {
+            // Convertir variantes string a objeto
+            try {
+                variantesParsed = JSON.parse(variantes);
+            } catch {
+                return res.status(400).json({ message: 'El formato de variantes no es válido' });
+            }
+
+            const { hayDuplicados, coloresDuplicados } = checkVariantesDuplicadas(variantesParsed);
+            if (hayDuplicados) {
+                return res.status(400).json({
+                    message: 'Hay variantes duplicadas (mismo colorPrincipal)',
+                    coloresDuplicados,
+                });
             }
         }
 
         const files = req.files as Express.Multer.File[];
-
         if (!files?.length) {
             return res.status(400).json({ message: 'Debes subir al menos una imagen' });
         }
 
-        const { imagenes, errores } = await uploadMultipleImages(files, 'productos');
+        const productoFiles = files.filter(f => f.fieldname === 'imagenes');
+        const variantesFilesMap = groupFilesByVariant(files, VARIANTE_IMAGENES_REGEX);
 
-        if (imagenes.length === 0) {
-            return res.status(400).json({ message: 'No se pudo subir ninguna imagen', errores });
+        const { imagenes, errores } = await uploadMultipleImages(productoFiles, 'productos');
+
+        if (imagenes.length === 0 && productoFiles.length > 0) {
+            return res.status(400).json({ message: 'No se pudo subir ninguna imagen del producto', errores });
         }
 
+        const erroresVariantes = await uploadVariantesImages(
+            variantesParsed,
+            variantesFilesMap,
+            'productos/variantes'
+        );
+        const hayAdvertencias = errores.length > 0 || erroresVariantes.length > 0;
 
         const newProduct = new ProductModel({
             nombre: nombre.trim(),
             marca,
+            lote,
             categorias: JSON.parse(categorias),
             genero,
             descripcion,
-            precio,
+            precioMercado,
+            costo,
+            stock,
             imagenes,
-            variantes: variantes ? JSON.parse(variantes) : [],
+            variantes: variantesParsed,
             activo
         });
 
         await newProduct.save();
         res.status(201).json({
             producto: newProduct,
-            ...(errores.length > 0 && {
-                advertencia: `${errores.length} de ${files.length} imagen(es) no se pudieron subir`,
+            ...(hayAdvertencias && {
+                advertencia: 'Algunas imágenes no se pudieron subir',
                 errores,
+                erroresVariantes,
             }),
         });
     } catch (error: any) {
@@ -113,7 +140,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
         const product = await ProductModel.findByIdAndUpdate(
             req.params.id,
             { activo: false },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });

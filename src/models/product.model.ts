@@ -2,6 +2,7 @@ import mongoose, { Schema } from 'mongoose';
 import type { IProduct, IVariante } from '../interface/products.interface.js';
 
 const varianteSchema = new Schema<IVariante>({
+    imagenes: { type: [String], default: [] },
     colorPrincipal: { type: String, required: true },
     coloresSecundarios: { type: [String] },
     stock: { type: Number, required: true, default: 0, min: 0 },
@@ -23,6 +24,7 @@ const productSchema = new Schema<IProduct>({
     }],
     genero: { type: String, enum: ['hombre', 'mujer', 'unisex'], required: true },
     descripcion: { type: String, default: '' },
+    stock: { type: Number, required: true, default: 0, min: 0 },
     talla: { type: String, default: "", trim: true },
     costo: { type: Number, min: 1, required: true },
     precioMercado: { type: Number, min: 1, required: true },

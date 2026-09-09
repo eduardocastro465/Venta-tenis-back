@@ -91,7 +91,7 @@ export const updateCategory = async (req: LangRequest, res: Response) => {
 export const deleteCategory = async (req: LangRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const productosConEstaCategoria = await ProductModel.countDocuments({ categoria: id });
+        const productosConEstaCategoria = await ProductModel.countDocuments({ categorias: id as any });
 
         if (productosConEstaCategoria > 0) {
             return res.status(409).json({

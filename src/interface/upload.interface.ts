@@ -7,3 +7,8 @@ export interface UploadMultipleResult {
     imagenes: string[];
     errores: ImagenError[];
 }
+
+export interface VarianteConImagenes {
+    imagenes?: string[];
+    [key: string]: any;
+}
