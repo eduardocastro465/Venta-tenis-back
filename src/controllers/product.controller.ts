@@ -5,6 +5,8 @@ import { handleError } from '../utils/handleError.js';
 import { uploadMultipleImages } from '../utils/uploadMultipleImages.js';
 import { groupFilesByVariant, uploadVariantesImages } from '../utils/variantImages.util.js';
 import { checkVariantesDuplicadas } from '../utils/validateVariantes.util.js';
+import { generarDatosProductoDesdeImagenes } from '../config/groqProductService.js';
+import { CategoryModel } from '../models/category.model.js';
 
 
 const VARIANTE_IMAGENES_REGEX = /^variante_(\d+)_imagenes$/;
@@ -148,5 +150,46 @@ export const deleteProduct = async (req: Request, res: Response) => {
         res.json({ message: 'Product deleted', product });
     } catch (error) {
         res.status(500).json({ error: 'Error deleting product' });
+    }
+};
+
+
+export const rellenarDatosImagen = async (req: Request, res: Response) => {
+    try {
+        const files = req.files as Express.Multer.File[];
+
+        const primerArchivo = files?.[0];
+        if (!primerArchivo) {
+            return res.status(400).json({ message: 'Debes subir al menos una imagen' });
+        }
+
+        const datosIA = await generarDatosProductoDesdeImagenes(
+            files.map((f) => f.buffer),
+            primerArchivo.mimetype
+        );
+
+        // Mapear las categorías sugeridas (texto) a ObjectId reales de tu colección Category.
+        const categoriasEncontradas = await CategoryModel.find({
+            nombre: { $in: datosIA.categoriasSugeridas.map((c) => new RegExp(c, "i")) },
+        }).select("_id nombre");
+
+        const categoriasNoEncontradas = datosIA.categoriasSugeridas.filter(
+            (sugerida) =>
+                !categoriasEncontradas.some((c) => c.nombre.toLowerCase().includes(sugerida.toLowerCase()))
+        );
+
+        res.json({
+            nombre: datosIA.nombre,
+            marca: datosIA.marca,
+            genero: datosIA.genero,
+            descripcion: datosIA.descripcion,
+            talla: datosIA.talla,
+            categorias: categoriasEncontradas.map((c) => c._id),
+            categoriasNoEncontradas,
+        });
+
+    } catch (error) {
+        console.error('Error generando datos desde imagen:', error);
+        res.status(500).json({ error: 'Error updating product' });
     }
 };

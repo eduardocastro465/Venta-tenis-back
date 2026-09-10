@@ -22,3 +22,8 @@ export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 export const JWT_SECRET = process.env.JWT_SECRET as string;
 export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
 
+// Token de Groq
+export const GROQ_API_KEY_1 = process.env.GROQ_API_KEY_1 as string;
+export const GROQ_API_KEY_2 = process.env.GROQ_API_KEY_2 as string;
+export const GROQ_API_KEY_3 = process.env.GROQ_API_KEY_3 as string;
+

@@ -26,3 +26,13 @@ export interface IProduct extends Document {
     variantes?: IVariante[];
     activo?: boolean;
 }
+
+
+export interface DatosProductoIA {
+  nombre: string;
+  marca: string | null;
+  genero: "hombre" | "mujer" | "unisex";
+  descripcion: string;
+  talla: string;
+  categoriasSugeridas: string[];
+}
