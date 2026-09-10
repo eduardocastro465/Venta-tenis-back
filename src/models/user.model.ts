@@ -10,7 +10,9 @@ const userSchema = new Schema<IUser>({
     },
     telefono: { type: String, required: true, unique: true },
     correo: { type: String, required: true, unique: true },
+    contrasena: { type: String, required: true },
     rol: { type: String, enum: ['cliente', 'propietario', 'admin'], default: 'cliente' },
+    refreshTokens: { type: [String], default: [] },
     estado: { type: String, enum: ['activo', 'inactivo', 'en_verificacion', 'suspendido'], default: 'en_verificacion' },
 }, { timestamps: true });
 

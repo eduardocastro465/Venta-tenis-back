@@ -14,6 +14,6 @@ const ventaSchema = new Schema<IVenta>({
     metodoPago: { type: String, required: true },
     referencia: { type: String },
     monto: { type: Number, required: true },
-}, { _id: false });
+});
 
 export const VentaModel = mongoose.model<IVenta>('Venta', ventaSchema);

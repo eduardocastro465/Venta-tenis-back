@@ -2,17 +2,7 @@ import type { Request, Response } from "express";
 import { UserModel } from "../models/user.model.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
-export const createUser = async (req: Request, res: Response) => {
-    try {
-        const { fotoPerfil, usuario, nombre, apellido, telefono, correo } = req.body;
 
-        const user = await UserModel.create({ fotoPerfil, usuario, nombre, apellido, telefono, correo });
-
-        return res.status(201).json({ message: "Usuario creado exitosamente", user });
-    } catch (error) {
-        return res.status(500).json({ message: "Error al crear el usuario", error });
-    }
-}
 
 export const getUserList = async (req: Request, res: Response) => {
     try {
