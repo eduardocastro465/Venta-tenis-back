@@ -12,6 +12,7 @@ import productRoutes from "./routes/products.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import lotRoutes from "./routes/lot.routes.js";
 import filterRoutes from "./routes/filters.routes.js";
+import ventasRoutes from "./routes/ventas.routes.js";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api/ventas', ventasRoutes);
 app.use('/api/filters', filterRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/lot', lotRoutes);
