@@ -16,7 +16,7 @@ import ventasRoutes from "./routes/ventas.routes.js";
 
 const app = express();
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '10kb' })); // evita que alguien mande un JSON gigante y tumbe el servidor
 app.use(sanitizeBody); // limpia inyecciones de NoSQL
 app.use(generalLimiter); // limita el número de peticiones
