@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { LotModel } from "../models/lots.model.js";
+import { generarNumeroLote } from "../utils/generarNumLote.util.js";
 
 export const getAllLots = async (req: Request, res: Response) => {
     try {
@@ -16,10 +17,9 @@ export const createLot = async (req: Request, res: Response) => {
 
         const { mercancia, viaticos, gasolina, otros } = req.body;
 
-        //crea la secuencia del lote $numero secuencial , dia, mes y año
-        const date = new Date();
-        const sequence = await LotModel.countDocuments() + 1;
-        const numLot = `LOTE-${sequence}-${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+        const numLot = await generarNumeroLote();
+
+        console.log(numLot);
 
         const lot = new LotModel({
             numLot,
