@@ -31,7 +31,7 @@ export const createCategory = async (req: LangRequest, res: Response) => {
         });
 
         await newCategory.save();
-        res.status(201).json({ message: 'Categoría creada exitosamente' });
+        res.status(201).json(newCategory);
     } catch (error: any) {
         console.log(error);
         if (error.code === 11000) {
@@ -68,7 +68,7 @@ export const getCategoryById = async (req: LangRequest, res: Response) => {
 export const updateCategory = async (req: LangRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { nombre } = req.body;
+        const { nombre, camposRequeridos } = req.body;
 
         const category = await CategoryModel.findById(id);
         if (!category) {
@@ -88,8 +88,15 @@ export const updateCategory = async (req: LangRequest, res: Response) => {
             category.nombre = nombre.trim();
         }
 
+        if (camposRequeridos && typeof camposRequeridos === 'object') {
+            category.camposRequeridos = {
+                ...category.camposRequeridos,
+                ...camposRequeridos,
+            };
+        }
+
         await category.save();
-        res.status(200).json({ message: 'Categoría actualizada' });
+        res.status(200).json(category);
     } catch (error: any) {
         if (error.code === 11000) {
             return res.status(409).json({ message: 'Categoría duplicada' });
