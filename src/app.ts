@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { allowedOrigins } from './config.js';
-import { generalLimiter } from './middleware/rateLimit.js';
+// import { generalLimiter } from './middleware/rateLimit.js';
 import { langMiddleware, type LangRequest } from './middleware/lang.middleware.js';
 import { sanitizeBody } from './middleware/sanitize.middleware.js';
 
@@ -20,7 +20,7 @@ const app = express();
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '10kb' })); // evita que alguien mande un JSON gigante y tumbe el servidor
 app.use(sanitizeBody); // limpia inyecciones de NoSQL
-app.use(generalLimiter); // limita el número de peticiones
+// app.use(generalLimiter); // limita el número de peticiones
 app.use(langMiddleware as express.RequestHandler); // detecta en que idioma responder
 
 
@@ -28,7 +28,6 @@ app.get('/', (req: Request, res: Response) => {
     const { msg } = req as LangRequest;
     res.send(msg?.general.apiRunning);
 });
-
 
 // Rutas
 app.use('/api/user', userRoutes);
