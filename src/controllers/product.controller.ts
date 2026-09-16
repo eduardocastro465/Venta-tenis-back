@@ -102,10 +102,14 @@ export const createProduct = async (req: LangRequest, res: Response) => {
     }
 };
 
-//  para el inventario admin
+// para el inventario admin
 export const listProducts = async (req: Request, res: Response) => {
     try {
-        const products = await ProductModel.find({ activo: true })
+        const filtro: any = {};
+        if (req.query.activo !== undefined) {
+            filtro.activo = req.query.activo === 'true';
+        }
+        const products = await ProductModel.find(filtro)
             .select('marca nombre costo precioMercado stock talla activo imagenes estado')
             .populate({ path: 'lote', select: 'numLot estado' })
             .populate({ path: 'categorias', select: 'nombre' })

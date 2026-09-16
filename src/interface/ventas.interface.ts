@@ -12,13 +12,17 @@ export interface IAbono {
 }
 
 export interface IVenta {
-    idUser: Types.ObjectId;
-    productos: Types.ObjectId[];
+    idUser?: Types.ObjectId;
+    cliente?: string;
+    telefonoCliente?: string;
+    idProductos: Types.ObjectId[];
     tipoPago: TipoPago;
     numeroMontos: number;
     montoPagado: number;
     totalAPagar: number;
-    fecha: Date;
+    fecha?: Date;
     estado: EstadoVenta;
     abonos: IAbono[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }

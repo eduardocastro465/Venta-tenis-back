@@ -1,14 +1,23 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import type { IVenta } from '../interface/ventas.interface.js';
-
 
 const ventaSchema = new Schema<IVenta>({
     idUser: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
+        required: false,
     },
-    productos: {
+    cliente: {
+        type: String,
+        default: 'Cliente Mostrador',
+        trim: true,
+    },
+    telefonoCliente: {
+        type: String,
+        default: '',
+        trim: true,
+    },
+    idProductos: {
         type: [Schema.Types.ObjectId],
         ref: 'Product',
         required: true,
@@ -26,9 +35,9 @@ const ventaSchema = new Schema<IVenta>({
             required: true,
         },
         fecha: { type: Date, required: true, default: Date.now },
-        folio: { type: String }, // null si es efectivo
+        folio: { type: String, default: '' },
     }],
-    numeroMontos: { type: Number, required: true },
+    numeroMontos: { type: Number, required: true, default: 1 },
     montoPagado: { type: Number, required: true },
     totalAPagar: { type: Number, required: true },
     estado: {
@@ -37,6 +46,6 @@ const ventaSchema = new Schema<IVenta>({
         default: "pendiente",
         required: true,
     },
-}, { _id: true });
+}, { timestamps: true });
 
 export const VentaModel = mongoose.model<IVenta>('Venta', ventaSchema);
