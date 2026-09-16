@@ -24,7 +24,7 @@ const ventaSchema = new Schema<IVenta>({
     },
     tipoPago: {
         type: String,
-        enum: ["Contado", "Abonos"],
+        enum: ["Contado", "Abonos","Apartado"],
         required: true,
     },
     abonos: [{
@@ -45,6 +45,14 @@ const ventaSchema = new Schema<IVenta>({
         enum: ["pagado", "pendiente", "cancelado"],
         default: "pendiente",
         required: true,
+    },
+    fechaLimiteApartado: {
+        type: Date,
+        default: null,
+    },
+    diasApartado: {
+        type: Number,
+        default: 0,
     },
 }, { timestamps: true });
 

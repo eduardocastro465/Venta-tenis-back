@@ -15,6 +15,8 @@ export const createSale = async (req: Request, res: Response) => {
             estado,
             abonos = [],
             idUser,
+            diasApartado,
+            fechaLimiteApartado,
         } = req.body;
 
         if (!idProductos || !Array.isArray(idProductos) || idProductos.length === 0) {
@@ -27,6 +29,24 @@ export const createSale = async (req: Request, res: Response) => {
         const estadoCalculado =
             estado || (tipoPago === 'Contado' || montoFinalPagado >= montoTotalAPagar ? 'pagado' : 'pendiente');
 
+        let fechaLimiteFinal: Date | null = null;
+        let diasFinal = Number(diasApartado) || 0;
+
+        if (tipoPago === 'Apartado') {
+            if (fechaLimiteApartado) {
+                fechaLimiteFinal = new Date(fechaLimiteApartado);
+            } else if (diasFinal > 0) {
+                const f = new Date();
+                f.setDate(f.getDate() + diasFinal);
+                fechaLimiteFinal = f;
+            } else {
+                diasFinal = 15;
+                const f = new Date();
+                f.setDate(f.getDate() + 15);
+                fechaLimiteFinal = f;
+            }
+        }
+
         const venta = new VentaModel({
             idProductos,
             cliente: cliente || 'Cliente Mostrador',
@@ -37,6 +57,8 @@ export const createSale = async (req: Request, res: Response) => {
             totalAPagar: montoTotalAPagar,
             estado: estadoCalculado,
             abonos,
+            fechaLimiteApartado: fechaLimiteFinal,
+            diasApartado: diasFinal,
             idUser: idUser || null,
         });
 

@@ -1,6 +1,6 @@
 import type { Types } from "mongoose";
 
-export type TipoPago = "Contado" | "Abonos";
+export type TipoPago = "Contado" | "Abonos" | "Apartado";
 export type MedioPago = "Efectivo" | "Transferencia";
 export type EstadoVenta = "pagado" | "pendiente" | "cancelado";
 
@@ -23,6 +23,8 @@ export interface IVenta {
     fecha?: Date;
     estado: EstadoVenta;
     abonos: IAbono[];
+    fechaLimiteApartado?: Date | null;
+    diasApartado?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
