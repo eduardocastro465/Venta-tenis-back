@@ -9,7 +9,7 @@ router.post('/', upload.any(), createProduct);
 router.post('/rellenarDatosImagen', upload.any(), rellenarDatosImagen);
 router.get('/', listProducts);
 router.get('/:id', getProduct);
-router.put('/:id', updateProduct);
+router.put('/:id', upload.any(), updateProduct);
 router.delete('/:id', deleteProduct);
 
 export default router;

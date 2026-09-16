@@ -1,6 +1,8 @@
 import Groq from "groq-sdk";
 import { GROQ_API_KEY_1, GROQ_API_KEY_2 } from "../config.js";
 import type { DatosProductoIA } from "../interface/products.interface.js";
+import { CategoryModel } from "../models/category.model.js";
+
 
 // Rotación de API keys
 const apiKeys = [
@@ -26,13 +28,14 @@ function obtenerSiguienteCliente(): Groq {
   return cliente;
 }
 
-const VISION_MODEL = "qwen/qwen3.6-27b";
+const VISION_MODEL = "qwen/qwen3.8-27b";
 
 // Límite real de Groq: 20MB por imagen, máx. 5 imágenes por request en este modelo.
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
-const SYSTEM_PROMPT = `Eres un asistente que analiza fotos de productos para un catálogo de e-commerce.
-El catálogo puede incluir cualquier tipo de producto (ropa, calzado, accesorios, electrónica, hogar, etc.), no solo moda.
+function construirSystemPrompt(categorias: string[]): string {
+  return `Eres un asistente que analiza fotos de productos para un catálogo de e-commerce.
+El catálogo incluye estas categorias de productos (${categorias.join(", ")}).
 Devuelve SIEMPRE un único objeto JSON válido, sin texto extra, con esta forma exacta:
 {
   "nombre": string,
@@ -40,7 +43,8 @@ Devuelve SIEMPRE un único objeto JSON válido, sin texto extra, con esta forma 
   "genero": "hombre" | "mujer" | "unisex",
   "descripcion": string,
   "talla": string,
-  "categoriasSugeridas": string[]
+  "categoria": string
+  "categoriasSugeridas": [string]
 }
 Reglas:
 - "nombre": corto y descriptivo, acorde al tipo de producto que sea (ej. "Tenis deportivos con agujetas", "Audífonos inalámbricos con estuche").
@@ -48,7 +52,10 @@ Reglas:
 - "genero": solo tiene sentido en ropa, calzado y accesorios de moda. Si el producto no tiene género aplicable (electrónica, hogar, etc.), usa "unisex" por defecto.
 - "descripcion": 2-3 frases en español, vendedoras pero honestas sobre lo que se ve.
 - "talla": solo aplica a ropa/calzado con etiqueta de talla visible. Para productos sin talla, o si no hay etiqueta visible, pon "" (cadena vacía) — nunca inventes un valor.
-- "categoriasSugeridas": 1 a 3 palabras/frases cortas describiendo el tipo de producto (ej. "tenis", "chamarras", "audífonos", "electrodomésticos").`;
+- "categoria": Solo sugeriras la categoria que sea mas acta para el tipo de producto que se muestra en la imagen
+- "categoriasSugeridas": Darás sugerencias de categorias que puedan aplicar al producto para tomarlo de consideración mas.
+`;
+}
 
 function bufferAImageUrl(buffer: Buffer, mimeType: string): string {
   if (buffer.byteLength > MAX_IMAGE_BYTES) {
@@ -76,8 +83,11 @@ export async function generarDatosProductoDesdeImagenes(
     image_url: { url: bufferAImageUrl(buf, mimeType) },
   }));
 
+  const categoriasDoc = await CategoryModel.find().select("nombre");
+  const nombresCategorias = categoriasDoc.map((c) => c.nombre as string);
+
   const mensajes = [
-    { role: "system" as const, content: SYSTEM_PROMPT },
+    { role: "system" as const, content: construirSystemPrompt(nombresCategorias) },
     {
       role: "user" as const,
       content: [

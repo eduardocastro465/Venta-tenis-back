@@ -18,6 +18,16 @@ export const createCategory = async (req: LangRequest, res: Response) => {
 
         const newCategory = new CategoryModel({
             nombre: nombre.trim(),
+            camposRequeridos: {
+                nombre: true,
+                marca: true,
+                genero: true,
+                descripcion: true,
+                talla: true,
+                stock: true,
+                imagenes: true,
+                variantes: true,
+            }
         });
 
         await newCategory.save();

@@ -17,15 +17,19 @@ const productSchema = new Schema<IProduct>({
         ref: 'Lot',
         required: true
     },
+    talla: { type: String, default: "N/A", trim: true },
     categorias: [{
         type: Schema.Types.ObjectId,
         ref: 'Category',
         required: true
     }],
+    ofertas: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Ofertas',
+    }],
     genero: { type: String, enum: ['hombre', 'mujer', 'unisex'], required: true },
     descripcion: { type: String, default: '' },
     stock: { type: Number, required: true, default: 0, min: 0 },
-    talla: { type: String, default: "", trim: true },
     costo: { type: Number, min: 1, required: true },
     precioMercado: { type: Number, min: 1, required: true },
     imagenes: { type: [String], default: [] },
@@ -34,6 +38,11 @@ const productSchema = new Schema<IProduct>({
 }, { timestamps: true });
 
 
-productSchema.index({ nombre: 1, marca: 1 }, { unique: true, collation: { locale: 'es', strength: 2 } }); //protege del duplicado
+productSchema.index({ activo: 1 });
+productSchema.index({ categorias: 1 });
+productSchema.index({ activo: 1, categorias: 1 });
+productSchema.index({ lote: 1 });
+productSchema.index({ nombre: 'text', marca: 'text', descripcion: 'text' }); // Índice de texto para búsqueda
+productSchema.index({ nombre: 1, marca: 1, lote: 1 }, { unique: true, collation: { locale: 'es', strength: 2 } }); //protege del duplicado
 
 export const ProductModel = mongoose.model<IProduct>('Product', productSchema);

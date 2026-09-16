@@ -7,6 +7,7 @@ import { groupFilesByVariant, uploadVariantesImages } from '../utils/variantImag
 import { checkVariantesDuplicadas } from '../utils/validateVariantes.util.js';
 import { generarDatosProductoDesdeImagenes } from '../config/groqProductService.js';
 import { CategoryModel } from '../models/category.model.js';
+import { deleteMultipleFromCloudinary } from '../utils/deleteFromCloudinary.js';
 
 
 const VARIANTE_IMAGENES_REGEX = /^variante_(\d+)_imagenes$/;
@@ -14,7 +15,8 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const createProduct = async (req: LangRequest, res: Response) => {
     try {
-        const { nombre, lote, stock, marca, precioMercado, costo, categorias, genero, descripcion, variantes, activo } = req.body;
+        const { nombre, marca, talla, categoria, lote, stock, precioMercado, costo, genero, descripcion, variantes, activo } = req.body;
+
 
         // Buscamos si existe el mismo producto ya resgitrado en el mismo lote
         const existingProduct = await ProductModel.findOne({
@@ -70,7 +72,8 @@ export const createProduct = async (req: LangRequest, res: Response) => {
             nombre: nombre.trim(),
             marca,
             lote,
-            categorias: JSON.parse(categorias),
+            talla,
+            categorias: categoria,
             genero,
             descripcion,
             precioMercado,
@@ -99,9 +102,15 @@ export const createProduct = async (req: LangRequest, res: Response) => {
     }
 };
 
+//  para el inventario admin
 export const listProducts = async (req: Request, res: Response) => {
     try {
-        const products = await ProductModel.find({ activo: true });
+        const products = await ProductModel.find({ activo: true })
+            .select('marca nombre costo precioMercado stock talla activo imagenes estado')
+            .populate({ path: 'lote', select: 'numLot estado' })
+            .populate({ path: 'categorias', select: 'nombre' })
+            .lean(); // para optimizar, solo trae datos no metodos de mongoose
+
         res.json(products);
     } catch (error) {
         res.status(500).json({ error: 'Error fetching products' });
@@ -123,32 +132,115 @@ export const getProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
-        const product = await ProductModel.findByIdAndUpdate(req.params.id, req.body, {
+        const {
+            nombre,
+            marca,
+            talla,
+            categoria,
+            lote,
+            stock,
+            precioMercado,
+            costo,
+            genero,
+            descripcion,
+            activo,
+            imagenesExistentes
+        } = req.body;
+
+        const productoActual = await ProductModel.findById(req.params.id);
+        if (!productoActual) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        const files = req.files as Express.Multer.File[] | undefined;
+        let nuevasImagenes: string[] = [];
+
+        if (files && files.length > 0) {
+            const productoFiles = files.filter(f => f.fieldname === 'imagenes');
+            if (productoFiles.length > 0) {
+                const { imagenes } = await uploadMultipleImages(productoFiles, 'productos');
+                nuevasImagenes = imagenes;
+            }
+        }
+
+        let conservadas: string[] = [];
+        if (imagenesExistentes !== undefined) {
+            try {
+                conservadas = typeof imagenesExistentes === 'string'
+                    ? JSON.parse(imagenesExistentes)
+                    : imagenesExistentes;
+            } catch {
+                conservadas = Array.isArray(imagenesExistentes) ? imagenesExistentes : [imagenesExistentes];
+            }
+
+            // Eliminar de Cloudinary las imagenes que estaban antes pero fueron descartadas
+            const imagenesAnteriores = productoActual.imagenes || [];
+            const imagenesAEliminar = imagenesAnteriores.filter(url => !conservadas.includes(url));
+            if (imagenesAEliminar.length > 0) {
+                await deleteMultipleFromCloudinary(imagenesAEliminar);
+            }
+        }
+
+        const updateData: any = {};
+        if (nombre !== undefined) updateData.nombre = nombre.trim();
+        if (marca !== undefined) updateData.marca = marca;
+        if (talla !== undefined) updateData.talla = talla;
+        if (lote !== undefined) updateData.lote = lote;
+        if (categoria !== undefined) updateData.categorias = [categoria];
+        if (genero !== undefined) updateData.genero = genero;
+        if (descripcion !== undefined) updateData.descripcion = descripcion;
+        if (stock !== undefined) updateData.stock = Number(stock);
+        if (costo !== undefined) updateData.costo = Number(costo);
+        if (precioMercado !== undefined) updateData.precioMercado = Number(precioMercado);
+        if (activo !== undefined) updateData.activo = activo === true || activo === 'true';
+
+        if (imagenesExistentes !== undefined || nuevasImagenes.length > 0) {
+            updateData.imagenes = [...conservadas, ...nuevasImagenes];
+        }
+
+        const product = await ProductModel.findByIdAndUpdate(req.params.id, updateData, {
             new: true,
             runValidators: true,
         });
-        if (!product) {
-            return res.status(404).json({ error: 'Product not found' });
-        }
+
         res.json(product);
     } catch (error) {
+        console.error('Error en updateProduct:', error);
         res.status(500).json({ error: 'Error updating product' });
     }
 };
 
-// Eliminar producto (borrado lógico, no físico)
+// Eliminar producto por completo: primero elimina imagenes de Cloudinary y luego elimina el documento en BD
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
-        const product = await ProductModel.findByIdAndUpdate(
-            req.params.id,
-            { activo: false },
-            { returnDocument: 'after' }
-        );
+        const product = await ProductModel.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
-        res.json({ message: 'Product deleted', product });
+
+        // 1. Eliminar imagenes de Cloudinary antes de eliminar en la BD
+        const imagenesAEliminar: string[] = [];
+        if (product.imagenes && product.imagenes.length > 0) {
+            imagenesAEliminar.push(...product.imagenes);
+        }
+        if (product.variantes && product.variantes.length > 0) {
+            for (const v of product.variantes) {
+                if (v.imagenes && v.imagenes.length > 0) {
+                    imagenesAEliminar.push(...v.imagenes);
+                }
+            }
+        }
+
+        if (imagenesAEliminar.length > 0) {
+            await deleteMultipleFromCloudinary(imagenesAEliminar);
+        }
+
+        // 2. Eliminar el producto por completo de la base de datos
+        await ProductModel.findByIdAndDelete(req.params.id);
+
+        res.json({ message: 'Product and images deleted completely', id: req.params.id });
     } catch (error) {
+        console.error('Error en deleteProduct:', error);
         res.status(500).json({ error: 'Error deleting product' });
     }
 };
@@ -173,10 +265,10 @@ export const rellenarDatosImagen = async (req: Request, res: Response) => {
             nombre: { $in: datosIA.categoriasSugeridas.map((c) => new RegExp(c, "i")) },
         }).select("_id nombre");
 
-        const categoriasNoEncontradas = datosIA.categoriasSugeridas.filter(
-            (sugerida) =>
-                !categoriasEncontradas.some((c) => c.nombre.toLowerCase().includes(sugerida.toLowerCase()))
-        );
+
+        const categoriaEncontrada = await CategoryModel.findOne({
+            nombre: { $eq: datosIA.categoria },
+        }).select("_id nombre");
 
         res.json({
             nombre: datosIA.nombre,
@@ -185,7 +277,7 @@ export const rellenarDatosImagen = async (req: Request, res: Response) => {
             descripcion: datosIA.descripcion,
             talla: datosIA.talla,
             categorias: categoriasEncontradas.map((c) => c._id),
-            categoriasNoEncontradas,
+            categoria: categoriaEncontrada?._id || null
         });
 
     } catch (error) {
